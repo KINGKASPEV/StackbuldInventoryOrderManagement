@@ -1,0 +1,6 @@
+@StackbuldInventoryOrderManagement.Api_HostAddress = http://localhost:5201
+
+GET {{StackbuldInventoryOrderManagement.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

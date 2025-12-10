@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StackbuldInventoryOrderManagement.Api", "StackbuldInventoryOrderManagement.Api\StackbuldInventoryOrderManagement.Api.csproj", "{36D98A37-D50C-453A-9E26-FECA6F52B18A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StackbuldInventoryOrderManagement.Application", "StackbuldInventoryOrderManagement.Application\StackbuldInventoryOrderManagement.Application.csproj", "{399F5162-AFE5-47BF-9A1F-4BA630D30C56}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StackbuldInventoryOrderManagement.Domain", "StackbuldInventoryOrderManagement.Domain\StackbuldInventoryOrderManagement.Domain.csproj", "{EB6CA136-5E5A-4699-A829-FD819216FDC7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StackbuldInventoryOrderManagement.Persistence", "StackbuldInventoryOrderManagement.Infrastructure\StackbuldInventoryOrderManagement.Persistence.csproj", "{D8E702EB-518C-45BC-9CD6-6CDF3E4D1CF1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StackbuldInventoryOrderManagement.Common", "StackbuldInventoryOrderManagement.Common\StackbuldInventoryOrderManagement.Common.csproj", "{492F5231-8690-4137-B9A7-8385FA07DD8C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{36D98A37-D50C-453A-9E26-FECA6F52B18A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36D98A37-D50C-453A-9E26-FECA6F52B18A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36D98A37-D50C-453A-9E26-FECA6F52B18A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36D98A37-D50C-453A-9E26-FECA6F52B18A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{399F5162-AFE5-47BF-9A1F-4BA630D30C56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{399F5162-AFE5-47BF-9A1F-4BA630D30C56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{399F5162-AFE5-47BF-9A1F-4BA630D30C56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{399F5162-AFE5-47BF-9A1F-4BA630D30C56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB6CA136-5E5A-4699-A829-FD819216FDC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB6CA136-5E5A-4699-A829-FD819216FDC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB6CA136-5E5A-4699-A829-FD819216FDC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB6CA136-5E5A-4699-A829-FD819216FDC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8E702EB-518C-45BC-9CD6-6CDF3E4D1CF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8E702EB-518C-45BC-9CD6-6CDF3E4D1CF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8E702EB-518C-45BC-9CD6-6CDF3E4D1CF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8E702EB-518C-45BC-9CD6-6CDF3E4D1CF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{492F5231-8690-4137-B9A7-8385FA07DD8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{492F5231-8690-4137-B9A7-8385FA07DD8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{492F5231-8690-4137-B9A7-8385FA07DD8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{492F5231-8690-4137-B9A7-8385FA07DD8C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
