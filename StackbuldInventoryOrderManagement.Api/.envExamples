@@ -1,1 +1,1 @@
-DATABASE_CONNECTION=Server=localhost;Port=5432;Database=erande;Username=postgres;Password=postgres;
+DATABASE_CONNECTION=Server=ep-damp-wave-afqmmwb4-pooler.c-2.us-west-2.aws.neon.tech;Port=5432;Database=neondb;Username=neondb_owner;Password=npg_x6oUdf7HkzGR;sslmode=require;channel_binding=require;

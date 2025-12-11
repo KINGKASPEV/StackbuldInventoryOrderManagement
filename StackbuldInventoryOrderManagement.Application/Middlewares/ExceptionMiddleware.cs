@@ -4,7 +4,6 @@ using StackbuldInventoryOrderManagement.Common.Responses;
 using System.Net;
 using Newtonsoft.Json;
 using ApplicationException = StackbuldInventoryOrderManagement.Common.CustomException.ApplicationException;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace StackbuldInventoryOrderManagement.Application.Middlewares
 {

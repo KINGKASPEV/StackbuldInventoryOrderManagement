@@ -16,5 +16,7 @@
         public const string LoginFailure = "Invalid credentials supplied";
         public const string UserDuplicateMessage = "User already exists";
         public const string OnlyCustomer = "This is for customers sign up only.";
+        public const string CustomerNotFound = "Customer not found";
+        public const string ConcurentUpdate = "Unable to complete order due to concurrent updates. Please try again.";
     }
 }
