@@ -10,5 +10,11 @@
         public const string SuccessMessage = "Successful";
         public const string FailedMessage = "Operation can't not be completed";
         public const string DuplicateMessage = "Duplicate record found";
+        public const string NotFoundMessage = "User not found";
+        public const string InvalidCredentials = "Invalid Credential";
+        public const string AccountNotActive = "Account is not active.";
+        public const string LoginFailure = "Invalid credentials supplied";
+        public const string UserDuplicateMessage = "User already exists";
+        public const string OnlyCustomer = "This is for customers sign up only.";
     }
 }
