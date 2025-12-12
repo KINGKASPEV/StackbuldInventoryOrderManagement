@@ -2,7 +2,7 @@
 
 A production-grade RESTful Web API built with .NET 8 for managing product catalog and order processing with robust concurrency control to prevent overselling.
 
-## 🎯 Features
+##  Features
 
 ### Product Catalog Management
 -  Complete CRUD operations for products
@@ -343,7 +343,8 @@ Response:
     "SecretKey": "your-super-secret-key-min-32-characters",
     "Issuer": "StackbuldInventoryAPI",
     "Audience": "StackbuldInventoryClients",
-    "ExpirationInMinutes": 60
+    "TokenLifeTimeInHours": 1,
+    "TokenLifeTimeDays": 7
   }
 }
 ```
@@ -362,8 +363,8 @@ DATABASE_CONNECTION="Host=localhost;Database=StackbuldInventoryDb;Username=postg
 4. **Product Deletion**: Soft delete to maintain referential integrity
 5. **Currency**: All prices are in a single currency (configurable)
 6. **Time Zones**: All timestamps stored in UTC
-7. **Authentication**: JWT tokens expire after 60 minutes (configurable)
-]
+7. **Authentication**: JWT tokens expire after 60 minutes for Customer and 7 days for Admin (configurable)
+   
 ##  Deployment Considerations
 
 ### Production Readiness Checklist
