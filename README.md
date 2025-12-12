@@ -207,6 +207,12 @@ catch (DbUpdateConcurrencyException ex) {
     return "Unable to complete order due to concurrent updates. Please try again.";
 }
 ```
+2. **Find the admin credentials below**
+```json
+  "email": "superadmin@kingsley.com",
+  "password": "P@ssw0rd",
+  "userType": 2
+```
 
 ##  Sample Request: Place Order
 
