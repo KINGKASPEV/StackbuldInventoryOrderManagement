@@ -25,3 +25,5 @@ WORKDIR /app
 COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 ENTRYPOINT ["dotnet", "StackbuldInventoryOrderManagement.Api.dll"]
+ENV ASPNETCORE_URLS=http://0.0.0.0:10000
+
