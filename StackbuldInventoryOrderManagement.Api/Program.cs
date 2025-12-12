@@ -26,6 +26,9 @@ logger.Info("Starting application...");
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+    builder.WebHost.UseUrls($"http://*:{port}");
     ConfigurationManager configuration = builder.Configuration;
 
     // Add services to the container.
