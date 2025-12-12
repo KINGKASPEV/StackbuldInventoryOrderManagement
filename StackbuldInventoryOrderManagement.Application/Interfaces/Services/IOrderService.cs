@@ -8,9 +8,9 @@ namespace StackbuldInventoryOrderManagement.Application.Interfaces.Services
     public interface IOrderService
     {
         Task<Response<OrderResponse>> CreateOrderAsync(CreateOrderDto request);
-        Task<Response<OrderResponse>> GetOrderByIdAsync(Guid id);
+        Task<Response<OrderResponse>> GetOrderByIdAsync(Guid id, string userId);
         Task<Response<PagedResult<OrderResponse>>> GetAllOrdersAsync(OrderFilterDto filter);
         Task<Response<PagedResult<OrderResponse>>> GetCustomerOrdersAsync(OrderFilterDto filter);
-        Task<Response<bool>> CancelOrderAsync(Guid id);
+        Task<Response<bool>> CancelOrderAsync(Guid id, string userId);
     }
 }

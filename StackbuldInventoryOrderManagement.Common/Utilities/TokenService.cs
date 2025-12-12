@@ -39,10 +39,14 @@ namespace StackbuldInventoryOrderManagement.Common.Utilities
                 ? TimeSpan.FromHours(jwtData.TokenLifeTimeInHours)
                 : TimeSpan.FromDays(jwtData.TokenLifeTimeDays);
 
+            //var now = DateTime.UtcNow;
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow + expiry,
+                //NotBefore = now,
+                //IssuedAt = now,
                 Audience = jwtData.Audience,
                 Issuer = jwtData.Issuer,
                 SigningCredentials = new SigningCredentials(

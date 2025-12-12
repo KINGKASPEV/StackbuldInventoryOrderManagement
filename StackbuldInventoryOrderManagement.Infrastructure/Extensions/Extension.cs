@@ -14,6 +14,7 @@ namespace StackbuldInventoryOrderManagement.Persistence.Extensions
             IConfiguration configuration
         )
         {
+
             // Get the connection string from environment variables
             var connectionString = configuration["DATABASE_CONNECTION"];
             if (string.IsNullOrEmpty(connectionString))

@@ -198,12 +198,21 @@ namespace StackbuldInventoryOrderManagement.Application.Services
             }
         }
 
-        public async Task<Response<OrderResponse>> GetOrderByIdAsync(Guid id)
+        public async Task<Response<OrderResponse>> GetOrderByIdAsync(Guid id, string userId)
         {
             var response = new Response<OrderResponse>();
 
             try
             {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user is null)
+                {
+                    _logger.LogWarning("User not found with ID {UserId}", userId);
+                    response.StatusCode = StatusCodes.Status404NotFound;
+                    response.Message = Constants.CustomerNotFound;
+                    return response;
+                }
+
                 var orders = await _orderRepository.FindAndIncludeAsync(
                     o => o.Id == id,
                     "OrderItems.Product",
@@ -212,13 +221,24 @@ namespace StackbuldInventoryOrderManagement.Application.Services
 
                 var order = orders.FirstOrDefault();
 
-                if (order == null)
+                if (order is null)
                 {
                     response.StatusCode = StatusCodes.Status404NotFound;
                     response.Message = "Order not found.";
                     return response;
                 }
 
+                if (user.UserType is not UserType.Admin && order.CustomerId != userId)
+                {
+                    _logger.LogWarning(
+                       "User {UserId} attempted to access order {OrderId} belonging to {CustomerId}",
+                       userId, id, order.CustomerId
+                   );
+                    response.StatusCode = StatusCodes.Status403Forbidden;
+                    response.Message = "You do not have permission to view this order.";
+                    return response;
+                }
+                    
                 var orderResponse = MapToOrderResponse(order);
 
                 response.StatusCode = StatusCodes.Status200OK;
@@ -235,6 +255,7 @@ namespace StackbuldInventoryOrderManagement.Application.Services
                 return response;
             }
         }
+
 
         public async Task<Response<PagedResult<OrderResponse>>> GetAllOrdersAsync(OrderFilterDto filter)
         {
@@ -284,7 +305,7 @@ namespace StackbuldInventoryOrderManagement.Application.Services
             return await GetAllOrdersAsync(filter);
         }
 
-        public async Task<Response<bool>> CancelOrderAsync(Guid id)
+        public async Task<Response<bool>> CancelOrderAsync(Guid id, string userId)
         {
             var response = new Response<bool>();
 
@@ -292,6 +313,15 @@ namespace StackbuldInventoryOrderManagement.Application.Services
 
             try
             {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user is null)
+                {
+                    _logger.LogWarning("User not found with ID {UserId}", user);
+                    response.StatusCode = StatusCodes.Status404NotFound;
+                    response.Message = Constants.CustomerNotFound;
+                    return response;
+                }
+
                 var orders = await _orderRepository.FindAndIncludeAsync(
                     o => o.Id == id,
                     "OrderItems.Product"
@@ -303,6 +333,17 @@ namespace StackbuldInventoryOrderManagement.Application.Services
                 {
                     response.StatusCode = StatusCodes.Status404NotFound;
                     response.Message = "Order not found.";
+                    return response;
+                }
+
+                if (user.UserType is not UserType.Admin && order.CustomerId != userId)
+                {
+                    _logger.LogWarning(
+                         "User {UserId} attempted to cancel order {OrderId} belonging to {CustomerId}",
+                         userId, id, order.CustomerId
+                     );
+                    response.StatusCode = StatusCodes.Status403Forbidden;
+                    response.Message = "You do not have permission to cancel this order.";
                     return response;
                 }
 

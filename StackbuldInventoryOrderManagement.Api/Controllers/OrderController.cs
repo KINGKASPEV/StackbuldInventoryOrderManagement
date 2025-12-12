@@ -3,16 +3,17 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StackbuldInventoryOrderManagement.Application.Interfaces.Services;
 using StackbuldInventoryOrderManagement.Application.Order.Dto;
-using System.Security.Claims;
+using StackbuldInventoryOrderManagement.Domain.Users;
 
 namespace StackbuldInventoryOrderManagement.Api.Controllers
 {
     /// <summary>
     /// Handles order management operations
     /// </summary>
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("api/orders")]
     [ApiController]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Produces("application/json")]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -26,7 +27,7 @@ namespace StackbuldInventoryOrderManagement.Api.Controllers
         /// Place a new order
         /// </summary>
         /// <param name="request">Order details with products and quantities</param>
-        [HttpPost]
+        [HttpPost("create")]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto request)
         {
             if (!ModelState.IsValid)
@@ -40,23 +41,14 @@ namespace StackbuldInventoryOrderManagement.Api.Controllers
         /// Get order by ID
         /// </summary>
         /// <param name="id">Order ID</param>
+        /// <param name="userId">User ID</param>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetOrderById(Guid id)
+        public async Task<IActionResult> GetOrderById([FromRoute] Guid id, [FromQuery] string userId)
         {
-            var response = await _orderService.GetOrderByIdAsync(id);
+            if (!ModelState.IsValid)
+                return StatusCode(StatusCodes.Status400BadRequest, ModelState);
 
-            // Ensure users can only view their own orders (unless admin)
-            if (response.StatusCode == StatusCodes.Status200OK && response.Data != null)
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var isAdmin = User.IsInRole("Admin");
-
-                if (!isAdmin && response.Data.CustomerId != userId)
-                {
-                    return StatusCode(StatusCodes.Status403Forbidden, "Access denied");
-                }
-            }
-
+            var response = await _orderService.GetOrderByIdAsync(id, userId);
             return StatusCode(response.StatusCode, response);
         }
 
@@ -64,8 +56,8 @@ namespace StackbuldInventoryOrderManagement.Api.Controllers
         /// Get all orders (Admin only)
         /// </summary>
         /// <param name="filter">Filter parameters</param>
-        [HttpGet]
-        [Authorize(Roles = "Admin")]
+        [HttpGet("all")]
+        [Authorize(Roles = nameof(UserType.Admin))]
         public async Task<IActionResult> GetAllOrders([FromQuery] OrderFilterDto filter)
         {
             var response = await _orderService.GetAllOrdersAsync(filter);
@@ -91,26 +83,12 @@ namespace StackbuldInventoryOrderManagement.Api.Controllers
         /// </summary>
         /// <param name="id">Order ID</param>
         [HttpPost("{id}/cancel")]
-        public async Task<IActionResult> CancelOrder(Guid id)
+        public async Task<IActionResult> CancelOrder([FromRoute] Guid id, [FromQuery] string userId)
         {
-            // First check if the order exists and belongs to the user
-            var orderResponse = await _orderService.GetOrderByIdAsync(id);
+            if (!ModelState.IsValid)
+                return StatusCode(StatusCodes.Status400BadRequest, ModelState);
 
-            if (orderResponse.StatusCode == StatusCodes.Status404NotFound)
-                return StatusCode(orderResponse.StatusCode, orderResponse);
-
-            if (orderResponse.Data != null)
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var isAdmin = User.IsInRole("Admin");
-
-                if (!isAdmin && orderResponse.Data.CustomerId != userId)
-                {
-                    return StatusCode(StatusCodes.Status403Forbidden, "Access denied");
-                }
-            }
-
-            var response = await _orderService.CancelOrderAsync(id);
+            var response = await _orderService.CancelOrderAsync(id, userId);
             return StatusCode(response.StatusCode, response);
         }
     }
