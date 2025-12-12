@@ -28,7 +28,7 @@ namespace StackbuldInventoryOrderManagement.Persistence.Extensions
                     connectionString,
                     dbOptions =>
                     {
-                        dbOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(10), null);
+                        //dbOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(10), null);
                         dbOptions.MigrationsAssembly("StackbuldInventoryOrderManagement.Persistence");
                     }
                 );
