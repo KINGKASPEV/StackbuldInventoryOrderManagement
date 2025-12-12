@@ -62,14 +62,24 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
-        c.SwaggerDoc("v1", new() { Title = "Stackbuld Inventory & Order Management API", Version = "v1" });
+        c.SwaggerDoc("v1", new OpenApiInfo
+        {
+            Title = "Stackbuld Inventory & Order Management API",
+            Version = "v1",
+            Description = "A production-grade API for managing products and orders with concurrency control",
+            Contact = new OpenApiContact
+            {
+                Name = "Kingsley Okafor",
+                Email = "kingsleychiboy22@gmail.com"
+            }
+        });
         c.UseDateOnlyTimeOnlyStringConverters();
         c.AddSecurityDefinition(
             "Bearer",
             new OpenApiSecurityScheme
             {
                 In = ParameterLocation.Header,
-                Description = "Please insert the bearer token into this field",
+                Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.",
                 Name = "Authorization",
                 Type = SecuritySchemeType.ApiKey,
             }
@@ -162,10 +172,11 @@ try
     // Configure the HTTP request pipeline.
     if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
     {
-        app.UseSwagger();
+        //app.UseSwagger();.
+        app.UseSwagger(options => options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi2_0);
         app.UseSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Erande Server Documentation v1");
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "Stackbuld Inventory & Order Management API v1");
         });
     }
 

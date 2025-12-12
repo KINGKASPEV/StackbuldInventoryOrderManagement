@@ -16,11 +16,21 @@ namespace StackbuldInventoryOrderManagement.Persistence.Repositories
             string ipAddress
         )
         {
+            // --- FIX START ---
+            // Use the validated 'schema' variable
+            var schema = configuration["db.schema"] ?? configuration["db__schema"] ?? "public";
+            if (string.IsNullOrEmpty(schema))
+            {
+                schema = "public";
+            }
+
+            // Construct the SQL using the 'schema' variable
             var sql =
-                $"INSERT INTO \"{configuration["db.schema"]}\".\"AuditTrail\" "
+                $"INSERT INTO \"{schema}\".\"AuditTrail\" "
                 + $"(\"ActionName\", \"ActionDescription\", \"Module\", \"LoggedInUser\", \"Origin\", \"DateCreated\", \"ActionTime\", \"CreatedBy\") "
                 + $"VALUES "
                 + $"(@ActionName, @ActionDescription, @Module, @LoggedInUser, @Origin, @DateCreated, @ActionTime, @CreatedBy)";
+            // --- FIX END ---
 
             var auditTrailObject = new AuditTrail()
             {
@@ -35,7 +45,7 @@ namespace StackbuldInventoryOrderManagement.Persistence.Repositories
             };
 
             //Retrieve connection string from environment variable
-            var connectionString = configuration["ERANDE_CONNECTION"];
+            var connectionString = configuration["DATABASE_CONNECTION"];
             if (string.IsNullOrEmpty(connectionString))
                 throw new InvalidOperationException(
                     "Database connection string is not configured in the environment variables."

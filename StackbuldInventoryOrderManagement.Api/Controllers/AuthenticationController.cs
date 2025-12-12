@@ -9,6 +9,7 @@ namespace StackbuldInventoryOrderManagement.Api.Controllers
     /// </summary>
     [Route("api/auth")]
     [ApiController]
+    [Produces("application/json")]
     public class AuthenticationController(
         IAuthenticationService _authenticationService) : ControllerBase
     {

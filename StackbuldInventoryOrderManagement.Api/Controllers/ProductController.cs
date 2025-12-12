@@ -10,9 +10,10 @@ namespace StackbuldInventoryOrderManagement.Api.Controllers
     /// <summary>
     /// Handles product catalog operations
     /// </summary>
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = nameof(UserType.Admin))]
     [Route("api/products")]
     [ApiController]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = nameof(UserType.Admin))]
+    [Produces("application/json")]
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
