@@ -87,7 +87,7 @@ StackbuldInventoryOrderManagement/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/stackbuld-inventory-management.git
+git clone [https://github.com/kingkaspev/stackbuld-inventory-management.git](https://github.com/KINGKASPEV/StackbuldInventoryOrderManagement.git)
 cd stackbuld-inventory-management
 ```
 
@@ -355,7 +355,7 @@ Configure via environment variable for security:
 DATABASE_CONNECTION="Host=localhost;Database=StackbuldInventoryDb;Username=postgres;Password=yourpassword"
 ```
 
-##  Assumptions
+##  Take Note of the following
 
 1. **User Registration**: Only customers can self-register; admins are created manually
 2. **Stock Management**: Negative stock is not allowed
