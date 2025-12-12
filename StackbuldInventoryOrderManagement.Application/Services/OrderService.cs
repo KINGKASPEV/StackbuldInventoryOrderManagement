@@ -41,6 +41,171 @@ namespace StackbuldInventoryOrderManagement.Application.Services
             _logger = logger;
         }
 
+        //public async Task<Response<OrderResponse>> CreateOrderAsync(CreateOrderDto request)
+        //{
+        //    var response = new Response<OrderResponse>();
+
+        //    var customer = await _userManager.FindByIdAsync(request.CustomerId);
+        //    if (customer is null)
+        //    {
+        //        _logger.LogWarning("Customer not found with ID {UserId}", request.CustomerId);
+        //        response.StatusCode = StatusCodes.Status404NotFound;
+        //        response.Message = Constants.CustomerNotFound;
+        //        return response;
+        //    }
+
+        //    using var transaction = await _dbContext.Database.BeginTransactionAsync();
+
+        //    try
+        //    {
+        //        var productIds = request.OrderItems.Select(x => x.ProductId).ToList();
+
+        //        var products = await _productRepository
+        //            .FindByCondition(p => productIds.Contains(p.Id), trackChanges: true)
+        //            .ToListAsync();
+
+        //        // This prevents other transactions from modifying these rows until we commit
+
+        //        if (products.Count != productIds.Distinct().Count())
+        //        {
+        //            response.StatusCode = StatusCodes.Status404NotFound;
+        //            response.Message = "One or more products not found.";
+        //            return response;
+        //        }
+
+        //        // Validate stock availability and active status
+        //        var insufficientStockItems = new List<string>();
+        //        var inactiveProducts = new List<string>();
+
+        //        foreach (var orderItem in request.OrderItems)
+        //        {
+        //            var product = products.FirstOrDefault(p => p.Id == orderItem.ProductId);
+
+        //            if (product == null)
+        //            {
+        //                insufficientStockItems.Add($"Product not found");
+        //                continue;
+        //            }
+
+        //            if (!product.IsActive)
+        //            {
+        //                inactiveProducts.Add($"{product.Name} is not available");
+        //            }
+
+        //            if (product.StockQuantity < orderItem.Quantity)
+        //            {
+        //                insufficientStockItems.Add(
+        //                    $"{product.Name}: Requested {orderItem.Quantity}, Available {product.StockQuantity}"
+        //                );
+        //            }
+        //        }
+
+        //        if (inactiveProducts.Any())
+        //        {
+        //            response.StatusCode = StatusCodes.Status400BadRequest;
+        //            response.Message = $"Inactive products: {string.Join(", ", inactiveProducts)}";
+        //            return response;
+        //        }
+
+        //        if (insufficientStockItems.Any())
+        //        {
+        //            response.StatusCode = StatusCodes.Status400BadRequest;
+        //            response.Message = $"Insufficient stock: {string.Join("; ", insufficientStockItems)}";
+        //            return response;
+        //        }
+
+        //        var order = new Orders
+        //        {
+        //            OrderNumber = GenerateOrderNumber(),
+        //            CustomerId = request.CustomerId,
+        //            Status = OrderStatus.Pending,
+        //            ShippingAddress = request.ShippingAddress,
+        //            Notes = request.Notes,
+        //            TotalAmount = 0
+        //        };
+
+        //        await _orderRepository.AddAsync(order);
+
+        //        decimal totalAmount = 0;
+        //        foreach (var itemDto in request.OrderItems)
+        //        {
+        //            var product = products.First(p => p.Id == itemDto.ProductId);
+
+        //            var orderItem = new OrderItem
+        //            {
+        //                OrderId = order.Id,
+        //                ProductId = product.Id,
+        //                Quantity = itemDto.Quantity,
+        //                UnitPrice = product.Price,
+        //                TotalPrice = product.Price * itemDto.Quantity
+        //            };
+
+        //            await _orderItemRepository.AddAsync(orderItem);
+
+        //            // Decrease stock quantity (critical section - protected by transaction)
+        //            product.StockQuantity -= itemDto.Quantity;
+        //            await _productRepository.UpdateAsync(product);
+
+        //            totalAmount += orderItem.TotalPrice;
+        //        }
+
+        //        order.TotalAmount = totalAmount;
+        //        await _orderRepository.UpdateAsync(order);
+
+        //        // Save all changes
+        //        await _dbContext.SaveChangesAsync();
+        //        await transaction.CommitAsync();
+
+        //        // Fetch the complete order with related data
+        //        var createdOrder = await _orderRepository
+        //            .FindAndIncludeAsync(
+        //                o => o.Id == order.Id,
+        //                "OrderItems.Product",
+        //                "Customer"
+        //            );
+
+        //        if (createdOrder is null || !createdOrder.Any())
+        //        {
+        //            response.StatusCode = StatusCodes.Status500InternalServerError;
+        //            response.Message = "Failed to retrieve the created order.";
+        //            return response;
+        //        }
+
+        //        var orderResponse = MapToOrderResponse(createdOrder.First());
+
+        //        response.StatusCode = StatusCodes.Status201Created;
+        //        response.Data = orderResponse;
+        //        response.Message = Constants.SuccessMessage;
+
+        //        _logger.LogInformation(
+        //            "Order created successfully. OrderId: {OrderId}, OrderNumber: {OrderNumber}",
+        //            order.Id,
+        //            order.OrderNumber
+        //        );
+
+        //        return response;
+        //    }
+        //    catch (DbUpdateConcurrencyException ex)
+        //    {
+        //        await transaction.RollbackAsync();
+        //        _logger.LogError(ex, "Concurrency conflict while creating order for customer {CustomerId}", request.CustomerId);
+
+        //        response.StatusCode = StatusCodes.Status409Conflict;
+        //        response.Message = Constants.ConcurentUpdate;
+        //        return response;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await transaction.RollbackAsync();
+        //        _logger.LogError(ex, "Error creating order for customer {CustomerId}", request.CustomerId);
+
+        //        response.StatusCode = StatusCodes.Status500InternalServerError;
+        //        response.Message = Constants.DefaultExceptionFriendlyMessage;
+        //        return response;
+        //    }
+        //}
+
+
         public async Task<Response<OrderResponse>> CreateOrderAsync(CreateOrderDto request)
         {
             var response = new Response<OrderResponse>();
@@ -54,148 +219,148 @@ namespace StackbuldInventoryOrderManagement.Application.Services
                 return response;
             }
 
-            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            // Use the execution strategy to handle retries
+            var strategy = _dbContext.Database.CreateExecutionStrategy();
 
-            try
+            return await strategy.ExecuteAsync(async () =>
             {
-                var productIds = request.OrderItems.Select(x => x.ProductId).ToList();
+                using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
-                var products = await _productRepository
-                    .FindByCondition(p => productIds.Contains(p.Id), trackChanges: true)
-                    .ToListAsync();
-
-                // This prevents other transactions from modifying these rows until we commit
-
-                if (products.Count != productIds.Distinct().Count())
+                try
                 {
-                    response.StatusCode = StatusCodes.Status404NotFound;
-                    response.Message = "One or more products not found.";
-                    return response;
-                }
+                    var productIds = request.OrderItems.Select(x => x.ProductId).ToList();
 
-                // Validate stock availability and active status
-                var insufficientStockItems = new List<string>();
-                var inactiveProducts = new List<string>();
+                    var products = await _productRepository
+                        .FindByCondition(p => productIds.Contains(p.Id), trackChanges: true)
+                        .ToListAsync();
 
-                foreach (var orderItem in request.OrderItems)
-                {
-                    var product = products.FirstOrDefault(p => p.Id == orderItem.ProductId);
-
-                    if (product == null)
+                    if (products.Count != productIds.Distinct().Count())
                     {
-                        insufficientStockItems.Add($"Product not found");
-                        continue;
+                        response.StatusCode = StatusCodes.Status404NotFound;
+                        response.Message = "One or more products not found.";
+                        return response;
+                    }
+                    var insufficientStockItems = new List<string>();
+                    var inactiveProducts = new List<string>();
+
+                    foreach (var orderItem in request.OrderItems)
+                    {
+                        var product = products.FirstOrDefault(p => p.Id == orderItem.ProductId);
+
+                        if (product == null)
+                        {
+                            insufficientStockItems.Add($"Product not found");
+                            continue;
+                        }
+
+                        if (!product.IsActive)
+                        {
+                            inactiveProducts.Add($"{product.Name} is not available");
+                        }
+
+                        if (product.StockQuantity < orderItem.Quantity)
+                        {
+                            insufficientStockItems.Add(
+                                $"{product.Name}: Requested {orderItem.Quantity}, Available {product.StockQuantity}"
+                            );
+                        }
                     }
 
-                    if (!product.IsActive)
+                    if (inactiveProducts.Any())
                     {
-                        inactiveProducts.Add($"{product.Name} is not available");
+                        response.StatusCode = StatusCodes.Status400BadRequest;
+                        response.Message = $"Inactive products: {string.Join(", ", inactiveProducts)}";
+                        return response;
                     }
 
-                    if (product.StockQuantity < orderItem.Quantity)
+                    if (insufficientStockItems.Any())
                     {
-                        insufficientStockItems.Add(
-                            $"{product.Name}: Requested {orderItem.Quantity}, Available {product.StockQuantity}"
-                        );
+                        response.StatusCode = StatusCodes.Status400BadRequest;
+                        response.Message = $"Insufficient stock: {string.Join("; ", insufficientStockItems)}";
+                        return response;
                     }
-                }
 
-                if (inactiveProducts.Any())
-                {
-                    response.StatusCode = StatusCodes.Status400BadRequest;
-                    response.Message = $"Inactive products: {string.Join(", ", inactiveProducts)}";
-                    return response;
-                }
-
-                if (insufficientStockItems.Any())
-                {
-                    response.StatusCode = StatusCodes.Status400BadRequest;
-                    response.Message = $"Insufficient stock: {string.Join("; ", insufficientStockItems)}";
-                    return response;
-                }
-
-                var order = new Orders
-                {
-                    OrderNumber = GenerateOrderNumber(),
-                    CustomerId = request.CustomerId,
-                    Status = OrderStatus.Pending,
-                    ShippingAddress = request.ShippingAddress,
-                    Notes = request.Notes,
-                    TotalAmount = 0 
-                };
-
-                await _orderRepository.AddAsync(order);
-
-                decimal totalAmount = 0;
-                foreach (var itemDto in request.OrderItems)
-                {
-                    var product = products.First(p => p.Id == itemDto.ProductId);
-
-                    var orderItem = new OrderItem
+                    var order = new Orders
                     {
-                        OrderId = order.Id,
-                        ProductId = product.Id,
-                        Quantity = itemDto.Quantity,
-                        UnitPrice = product.Price,
-                        TotalPrice = product.Price * itemDto.Quantity
+                        OrderNumber = GenerateOrderNumber(),
+                        CustomerId = request.CustomerId,
+                        Status = OrderStatus.Pending,
+                        ShippingAddress = request.ShippingAddress,
+                        Notes = request.Notes,
+                        TotalAmount = 0
                     };
 
-                    await _orderItemRepository.AddAsync(orderItem);
+                    await _orderRepository.AddAsync(order);
 
-                    // Decrease stock quantity (critical section - protected by transaction)
-                    product.StockQuantity -= itemDto.Quantity;
-                    await _productRepository.UpdateAsync(product);
+                    decimal totalAmount = 0;
+                    foreach (var itemDto in request.OrderItems)
+                    {
+                        var product = products.First(p => p.Id == itemDto.ProductId);
 
-                    totalAmount += orderItem.TotalPrice;
-                }
+                        var orderItem = new OrderItem
+                        {
+                            OrderId = order.Id,
+                            ProductId = product.Id,
+                            Quantity = itemDto.Quantity,
+                            UnitPrice = product.Price,
+                            TotalPrice = product.Price * itemDto.Quantity
+                        };
 
-                order.TotalAmount = totalAmount;
-                await _orderRepository.UpdateAsync(order);
+                        await _orderItemRepository.AddAsync(orderItem);
 
-                // Save all changes
-                await _dbContext.SaveChangesAsync();
-                await transaction.CommitAsync();
+                        product.StockQuantity -= itemDto.Quantity;
+                        await _productRepository.UpdateAsync(product);
 
-                // Fetch the complete order with related data
-                var createdOrder = await _orderRepository
-                    .FindAndIncludeAsync(
-                        o => o.Id == order.Id,
-                        "OrderItems.Product",
-                        "Customer"
+                        totalAmount += orderItem.TotalPrice;
+                    }
+
+                    order.TotalAmount = totalAmount;
+                    await _orderRepository.UpdateAsync(order);
+
+                    await _dbContext.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    // Fetch the complete order
+                    var createdOrder = await _orderRepository
+                        .FindAndIncludeAsync(
+                            o => o.Id == order.Id,
+                            "OrderItems.Product",
+                            "Customer"
+                        );
+
+                    var orderResponse = MapToOrderResponse(createdOrder.First());
+
+                    response.StatusCode = StatusCodes.Status201Created;
+                    response.Data = orderResponse;
+                    response.Message = Constants.SuccessMessage;
+
+                    _logger.LogInformation(
+                        "Order created successfully. OrderId: {OrderId}, OrderNumber: {OrderNumber}",
+                        order.Id,
+                        order.OrderNumber
                     );
 
-                var orderResponse = MapToOrderResponse(createdOrder.First());
+                    return response;
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Concurrency conflict while creating order for customer {CustomerId}", request.CustomerId);
 
-                response.StatusCode = StatusCodes.Status201Created;
-                response.Data = orderResponse;
-                response.Message = Constants.SuccessMessage;
+                    response.StatusCode = StatusCodes.Status409Conflict;
+                    response.Message = Constants.ConcurentUpdate;
+                    return response;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Error creating order for customer {CustomerId}", request.CustomerId);
 
-                _logger.LogInformation(
-                    "Order created successfully. OrderId: {OrderId}, OrderNumber: {OrderNumber}",
-                    order.Id,
-                    order.OrderNumber
-                );
-
-                return response;
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Concurrency conflict while creating order for customer {CustomerId}", request.CustomerId);
-
-                response.StatusCode = StatusCodes.Status409Conflict;
-                response.Message = Constants.ConcurentUpdate;
-                return response;
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error creating order for customer {CustomerId}", request.CustomerId);
-
-                response.StatusCode = StatusCodes.Status500InternalServerError;
-                response.Message = Constants.DefaultExceptionFriendlyMessage;
-                return response;
-            }
+                    response.StatusCode = StatusCodes.Status500InternalServerError;
+                    response.Message = Constants.DefaultExceptionFriendlyMessage;
+                    return response;
+                }
+            });
         }
 
         public async Task<Response<OrderResponse>> GetOrderByIdAsync(Guid id, string userId)
