@@ -26,6 +26,10 @@ logger.Info("Starting application...");
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+    // Configure to use Render's PORT environment variable
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
     ConfigurationManager configuration = builder.Configuration;
 
     // Add services to the container.
