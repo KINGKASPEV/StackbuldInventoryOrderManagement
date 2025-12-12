@@ -20,9 +20,6 @@ namespace StackbuldInventoryOrderManagement.Application.Interfaces.Repositories
 
         Task<T> GetByIdAsync(string id);
         Task<T> GetByIdAsync2(Guid id);
-
-        //Task<T> GetByIdAsync<TKey>(TKey id);
-        Task RemoveOutLetAsync(T entity);
         Task DeleteRangeAsync(IEnumerable<T> entities);
         Task RemoveAsync(T entity);
         Task RemoveRangeAsync(IEnumerable<T> entities);
@@ -31,7 +28,6 @@ namespace StackbuldInventoryOrderManagement.Application.Interfaces.Repositories
             Expression<Func<T, object>> includeProperty,
             params Expression<Func<object, object>>[] thenIncludeProperties
         );
-        Task<T> GetWithPermissionsAsync(Expression<Func<T, bool>> expression);
         Task<int> CountAsync(Expression<Func<T, bool>> expression);
         Task<int> CountAsync();
         Task<bool> SaveAsync();

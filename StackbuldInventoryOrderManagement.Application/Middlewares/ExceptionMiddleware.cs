@@ -62,7 +62,6 @@ namespace StackbuldInventoryOrderManagement.Application.Middlewares
                     new Response<object>
                     {
                         StatusCode = Enum.Parse<int>(context.Response.StatusCode.ToString()),
-                        //StatusCode = (int)StatusCodes.Status500InternalServerError,
                         Message = message,
                     }
                 )

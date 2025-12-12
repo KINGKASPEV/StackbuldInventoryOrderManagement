@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using StackbuldInventoryOrderManagement.Application.Interfaces.Persistence;
 using StackbuldInventoryOrderManagement.Application.Interfaces.Repositories;
@@ -205,162 +204,127 @@ namespace StackbuldInventoryOrderManagement.Application.Services
         //    }
         //}
 
-
         public async Task<Response<OrderResponse>> CreateOrderAsync(CreateOrderDto request)
         {
             var response = new Response<OrderResponse>();
 
-            var customer = await _userManager.FindByIdAsync(request.CustomerId);
-            if (customer is null)
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+
+            try
             {
-                _logger.LogWarning("Customer not found with ID {UserId}", request.CustomerId);
-                response.StatusCode = StatusCodes.Status404NotFound;
-                response.Message = Constants.CustomerNotFound;
-                return response;
-            }
-
-            // Use the execution strategy to handle retries
-            var strategy = _dbContext.Database.CreateExecutionStrategy();
-
-            return await strategy.ExecuteAsync(async () =>
-            {
-                using var transaction = await _dbContext.Database.BeginTransactionAsync();
-
-                try
+                var customer = await _userManager.FindByIdAsync(request.CustomerId);
+                if (customer is null)
                 {
-                    var productIds = request.OrderItems.Select(x => x.ProductId).ToList();
+                    _logger.LogWarning("Customer not found with ID {UserId}", request.CustomerId);
+                    response.StatusCode = StatusCodes.Status404NotFound;
+                    response.Message = Constants.CustomerNotFound;
+                    return response;
+                }
 
-                    var products = await _productRepository
-                        .FindByCondition(p => productIds.Contains(p.Id), trackChanges: true)
-                        .ToListAsync();
+                if (request.OrderItems == null || !request.OrderItems.Any())
+                {
+                    response.StatusCode = StatusCodes.Status400BadRequest;
+                    response.Message = "Order must contain at least one item.";
+                    return response;
+                }
 
-                    if (products.Count != productIds.Distinct().Count())
+                var orderItems = new List<OrderItem>();
+                decimal totalAmount = 0;
+
+                foreach (var item in request.OrderItems)
+                {
+                    var product = await _productRepository.GetByIdAsync2(item.ProductId);
+
+                    if (product == null)
                     {
                         response.StatusCode = StatusCodes.Status404NotFound;
-                        response.Message = "One or more products not found.";
+                        response.Message = $"Product with ID {item.ProductId} not found.";
+                        await transaction.RollbackAsync();
                         return response;
                     }
-                    var insufficientStockItems = new List<string>();
-                    var inactiveProducts = new List<string>();
 
-                    foreach (var orderItem in request.OrderItems)
-                    {
-                        var product = products.FirstOrDefault(p => p.Id == orderItem.ProductId);
-
-                        if (product == null)
-                        {
-                            insufficientStockItems.Add($"Product not found");
-                            continue;
-                        }
-
-                        if (!product.IsActive)
-                        {
-                            inactiveProducts.Add($"{product.Name} is not available");
-                        }
-
-                        if (product.StockQuantity < orderItem.Quantity)
-                        {
-                            insufficientStockItems.Add(
-                                $"{product.Name}: Requested {orderItem.Quantity}, Available {product.StockQuantity}"
-                            );
-                        }
-                    }
-
-                    if (inactiveProducts.Any())
+                    if (!product.IsActive)
                     {
                         response.StatusCode = StatusCodes.Status400BadRequest;
-                        response.Message = $"Inactive products: {string.Join(", ", inactiveProducts)}";
+                        response.Message = $"Product {product.Name} is not active.";
+                        await transaction.RollbackAsync();
                         return response;
                     }
 
-                    if (insufficientStockItems.Any())
+                    if (product.StockQuantity < item.Quantity)
                     {
                         response.StatusCode = StatusCodes.Status400BadRequest;
-                        response.Message = $"Insufficient stock: {string.Join("; ", insufficientStockItems)}";
+                        response.Message = $"Insufficient stock for {product.Name}. Available: {product.StockQuantity}, Requested: {item.Quantity}";
+                        await transaction.RollbackAsync();
                         return response;
                     }
 
-                    var order = new Orders
+                    product.StockQuantity -= item.Quantity;
+                    await _productRepository.UpdateAsync(product);
+
+                    var itemTotal = product.Price * item.Quantity;
+                    totalAmount += itemTotal;
+
+                    orderItems.Add(new OrderItem
                     {
-                        OrderNumber = GenerateOrderNumber(),
-                        CustomerId = request.CustomerId,
-                        Status = OrderStatus.Pending,
-                        ShippingAddress = request.ShippingAddress,
-                        Notes = request.Notes,
-                        TotalAmount = 0
-                    };
+                        ProductId = product.Id,
+                        Quantity = item.Quantity,
+                        UnitPrice = product.Price,
+                        TotalPrice = itemTotal
+                    });
+                }
 
-                    await _orderRepository.AddAsync(order);
+                var order = new Orders
+                {
+                    OrderNumber = GenerateOrderNumber(),
+                    CustomerId = request.CustomerId,
+                    Status = OrderStatus.Pending,
+                    TotalAmount = totalAmount,
+                    ShippingAddress = request.ShippingAddress,
+                    Notes = request.Notes,
+                    OrderItems = orderItems
+                };
 
-                    decimal totalAmount = 0;
-                    foreach (var itemDto in request.OrderItems)
+                await _orderRepository.AddAsync(order);
+                await _orderRepository.SaveAsync();
+
+                await transaction.CommitAsync();
+
+                response.StatusCode = StatusCodes.Status201Created;
+                response.Data = new OrderResponse
+                {
+                    Id = order.Id,
+                    OrderNumber = order.OrderNumber,
+                    CustomerId = order.CustomerId,
+                    CustomerName = $"{order.Customer?.FirstName} {order.Customer?.LastName}".Trim(),
+                    CustomerEmail = order.Customer?.Email ?? string.Empty,
+                    Status = order.Status,
+                    TotalAmount = order.TotalAmount,
+                    ShippingAddress = order.ShippingAddress,
+                    Notes = order.Notes,
+                    DateCreated = order.DateCreated,
+                    OrderItems = orderItems.Select(oi => new OrderItemResponse
                     {
-                        var product = products.First(p => p.Id == itemDto.ProductId);
+                        Id = oi.Id,
+                        ProductId = oi.ProductId,
+                        Quantity = oi.Quantity,
+                        UnitPrice = oi.UnitPrice,
+                        TotalPrice = oi.TotalPrice
+                    }).ToList()
+                };
+                response.Message = "Order created successfully.";
 
-                        var orderItem = new OrderItem
-                        {
-                            OrderId = order.Id,
-                            ProductId = product.Id,
-                            Quantity = itemDto.Quantity,
-                            UnitPrice = product.Price,
-                            TotalPrice = product.Price * itemDto.Quantity
-                        };
-
-                        await _orderItemRepository.AddAsync(orderItem);
-
-                        product.StockQuantity -= itemDto.Quantity;
-                        await _productRepository.UpdateAsync(product);
-
-                        totalAmount += orderItem.TotalPrice;
-                    }
-
-                    order.TotalAmount = totalAmount;
-                    await _orderRepository.UpdateAsync(order);
-
-                    await _dbContext.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    // Fetch the complete order
-                    var createdOrder = await _orderRepository
-                        .FindAndIncludeAsync(
-                            o => o.Id == order.Id,
-                            "OrderItems.Product",
-                            "Customer"
-                        );
-
-                    var orderResponse = MapToOrderResponse(createdOrder.First());
-
-                    response.StatusCode = StatusCodes.Status201Created;
-                    response.Data = orderResponse;
-                    response.Message = Constants.SuccessMessage;
-
-                    _logger.LogInformation(
-                        "Order created successfully. OrderId: {OrderId}, OrderNumber: {OrderNumber}",
-                        order.Id,
-                        order.OrderNumber
-                    );
-
-                    return response;
-                }
-                catch (DbUpdateConcurrencyException ex)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogError(ex, "Concurrency conflict while creating order for customer {CustomerId}", request.CustomerId);
-
-                    response.StatusCode = StatusCodes.Status409Conflict;
-                    response.Message = Constants.ConcurentUpdate;
-                    return response;
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    _logger.LogError(ex, "Error creating order for customer {CustomerId}", request.CustomerId);
-
-                    response.StatusCode = StatusCodes.Status500InternalServerError;
-                    response.Message = Constants.DefaultExceptionFriendlyMessage;
-                    return response;
-                }
-            });
+                _logger.LogInformation("Order created successfully with ID: {OrderId}", order.Id);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error creating order");
+                response.StatusCode = StatusCodes.Status500InternalServerError;
+                response.Message = Constants.DefaultExceptionFriendlyMessage;
+                return response;
+            }
         }
 
         public async Task<Response<OrderResponse>> GetOrderByIdAsync(Guid id, string userId)
@@ -473,7 +437,6 @@ namespace StackbuldInventoryOrderManagement.Application.Services
         public async Task<Response<bool>> CancelOrderAsync(Guid id, string userId)
         {
             var response = new Response<bool>();
-
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
             try
@@ -481,7 +444,7 @@ namespace StackbuldInventoryOrderManagement.Application.Services
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user is null)
                 {
-                    _logger.LogWarning("User not found with ID {UserId}", user);
+                    _logger.LogWarning("User not found with ID {UserId}", userId);
                     response.StatusCode = StatusCodes.Status404NotFound;
                     response.Message = Constants.CustomerNotFound;
                     return response;
@@ -491,7 +454,6 @@ namespace StackbuldInventoryOrderManagement.Application.Services
                     o => o.Id == id,
                     "OrderItems.Product"
                 );
-
                 var order = orders.FirstOrDefault();
 
                 if (order == null)
@@ -504,9 +466,9 @@ namespace StackbuldInventoryOrderManagement.Application.Services
                 if (user.UserType is not UserType.Admin && order.CustomerId != userId)
                 {
                     _logger.LogWarning(
-                         "User {UserId} attempted to cancel order {OrderId} belonging to {CustomerId}",
-                         userId, id, order.CustomerId
-                     );
+                        "User {UserId} attempted to cancel order {OrderId} belonging to {CustomerId}",
+                        userId, id, order.CustomerId
+                    );
                     response.StatusCode = StatusCodes.Status403Forbidden;
                     response.Message = "You do not have permission to cancel this order.";
                     return response;
@@ -539,7 +501,7 @@ namespace StackbuldInventoryOrderManagement.Application.Services
                 order.CancelledDate = DateTime.UtcNow;
                 await _orderRepository.UpdateAsync(order);
 
-                await _dbContext.SaveChangesAsync();
+                await _orderRepository.SaveAsync();
                 await transaction.CommitAsync();
 
                 response.StatusCode = StatusCodes.Status200OK;
@@ -547,14 +509,12 @@ namespace StackbuldInventoryOrderManagement.Application.Services
                 response.Message = "Order cancelled successfully.";
 
                 _logger.LogInformation("Order cancelled successfully. OrderId: {OrderId}", id);
-
                 return response;
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error cancelling order with ID: {OrderId}", id);
-
                 response.StatusCode = StatusCodes.Status500InternalServerError;
                 response.Message = Constants.DefaultExceptionFriendlyMessage;
                 return response;

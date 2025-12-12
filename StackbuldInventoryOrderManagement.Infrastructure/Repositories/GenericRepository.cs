@@ -115,30 +115,9 @@ namespace StackbuldInventoryOrderManagement.Persistence.Repositories
             return await _dbSet.FindAsync(id);
         }
 
-        //public async Task<T> GetByIdAsync<TKey>(TKey id)
-        //{
-        //    return await _dbSet.FindAsync(id);
-        //}
-
         public async Task RemoveAsync(T entity)
         {
             _dbSet.Remove(entity);
-        }
-
-        public async Task RemoveOutLetAsync(T entity)
-        {
-            _dbContext.Set<T>().Remove(entity);
-            await _dbContext.SaveChangesAsync();
-        }
-
-        public async Task RemoveAsync(Guid id)
-        {
-            var entity = await _dbSet.FindAsync(id);
-            if (entity != null)
-            {
-                _dbSet.Remove(entity);
-                await _dbContext.SaveChangesAsync();
-            }
         }
 
         public Task RemoveRangeAsync(IEnumerable<T> entities)
@@ -171,13 +150,6 @@ namespace StackbuldInventoryOrderManagement.Persistence.Repositories
             }
 
             return (IQueryable<T>)query;
-        }
-
-        public async Task<T> GetWithPermissionsAsync(Expression<Func<T, bool>> expression)
-        {
-            return await _dbSet
-                .Include("MemberRole.RolePermissions.Permission")
-                .FirstOrDefaultAsync(expression);
         }
 
         public async Task<int> CountAsync()

@@ -11,9 +11,7 @@ namespace StackbuldInventoryOrderManagement.Domain.Products
         public int StockQuantity { get; set; }
         public bool IsActive { get; set; } = true;
         public string? ImageUrl { get; set; }
-        public string? Sku { get; set; } // Stock Keeping Unit
-
-        // Navigation properties
+        public string? Sku { get; set; } 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 }

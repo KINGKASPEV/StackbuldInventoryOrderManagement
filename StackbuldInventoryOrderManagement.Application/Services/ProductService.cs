@@ -176,13 +176,13 @@ namespace StackbuldInventoryOrderManagement.Application.Services
                     }
                 }
 
-                product.Name = request.Name;
-                product.Description = request.Description;
-                product.Price = request.Price;
-                product.StockQuantity = request.StockQuantity;
-                product.ImageUrl = request.ImageUrl;
-                product.Sku = request.Sku;
-                product.IsActive = request.IsActive;
+                if (!string.IsNullOrEmpty(request.Name)) product.Name = request.Name;
+                if (!string.IsNullOrEmpty(request.Description)) product.Description = request.Description;
+                if (request.Price.HasValue) product.Price = request.Price.Value;
+                if (request.StockQuantity.HasValue) product.StockQuantity = request.StockQuantity.Value;
+                if (!string.IsNullOrEmpty(request.ImageUrl)) product.ImageUrl = request.ImageUrl;
+                if (!string.IsNullOrEmpty(request.Sku)) product.Sku = request.Sku;
+                if (request.IsActive.HasValue) product.IsActive = request.IsActive.Value;
 
                 await _productRepository.UpdateAsync(product);
                 await _productRepository.SaveAsync();
