@@ -87,7 +87,7 @@ StackbuldInventoryOrderManagement/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/stackbuld-inventory-management.git
+git clone [https://github.com/kingkaspev/stackbuld-inventory-management.git](https://github.com/KINGKASPEV/StackbuldInventoryOrderManagement.git)
 cd stackbuld-inventory-management
 ```
 
@@ -124,6 +124,13 @@ The API will be available at:
 - HTTPS: `https://localhost:7001`
 - HTTP: `http://localhost:5001`
 - Swagger UI: `https://localhost:7001/swagger`
+
+  **Find the admin credentials below**
+```json
+  "email": "superadmin@kingsley.com",
+  "password": "P@ssw0rd",
+  "userType": 2
+```
 
 ##  API Endpoints
 
@@ -207,6 +214,7 @@ catch (DbUpdateConcurrencyException ex) {
     return "Unable to complete order due to concurrent updates. Please try again.";
 }
 ```
+ 
 
 ##  Sample Request: Place Order
 
@@ -355,7 +363,7 @@ Configure via environment variable for security:
 DATABASE_CONNECTION="Host=localhost;Database=StackbuldInventoryDb;Username=postgres;Password=yourpassword"
 ```
 
-##  Assumptions
+##  Take Note of the following
 
 1. **User Registration**: Only customers can self-register; admins are created manually
 2. **Stock Management**: Negative stock is not allowed
